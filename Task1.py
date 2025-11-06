@@ -5,7 +5,7 @@ eps = 1  # Energy (unit of epsilon0).
 v0 = 1  # Initial speed (units of v0 = sqrt((2 * epsilon0) / m0)).
 
 # Parameters for the simulation.
-N_particles = 100  # Number of particles.
+N_particles = 1  # Number of particles.
 
 dt = 0.001   # Time step (units of t0 = sigma * sqrt(m0 /(2 * epsilon0))).
 
@@ -93,46 +93,17 @@ import math
 import matplotlib.pyplot as plt
 window_size = 600
 
-tk = Tk()
-tk.geometry(f'{window_size + 20}x{window_size + 20}')
-tk.configure(background='#000000')
-
-canvas = Canvas(tk, background='#ECECEC')  # Generate animation window 
-tk.attributes('-topmost', 0)
-canvas.place(x=10, y=10, height=window_size, width=window_size)
-
-specialparticle = canvas.create_oval(
-    (x[0] - sigma / 2) / L * window_size + window_size / 2, 
-    (y[0] - sigma / 2) / L * window_size + window_size / 2,
-    (x[0] + sigma / 2) / L * window_size + window_size / 2, 
-    (y[0] + sigma / 2) / L * window_size + window_size / 2,
-    outline='#000000', 
-    fill='#000000',
-)
-
-particles = []
-for j in range(1, N_particles):
-    particles.append(
-        canvas.create_oval(
-            (x[j] - sigma / 2) / L * window_size + window_size / 2, 
-            (y[j] - sigma / 2) / L * window_size + window_size / 2,
-            (x[j] + sigma / 2) / L * window_size + window_size / 2, 
-            (y[j] + sigma / 2) / L * window_size + window_size / 2,
-            outline='#00C0C0', 
-            fill='#00C0C0',
-        )
-    )
 
 step = 0
 
 def stop_loop(event):
     global running
     running = False
-tk.bind("<Escape>", stop_loop)  # Bind the Escape key to stop the loop.
 running = True  # Flag to control the loop.
 while running:
     x_half = x + 0.5 * vx * dt      
-    y_half = y + 0.5 * vy * dt      
+    y_half = y + 0.5 * vy * dt
+    print("Running")      
 
     fx, fy = \
         total_force_cutoff(x_half, y_half, N_particles, sigma, eps, neighbours)
@@ -178,36 +149,11 @@ while running:
     v = nv
     phi = nphi
         
-    # Update animation frame.
-    if step % 100 == 0:        
-        canvas.coords(
-            specialparticle,
-            (nx[0] - sigma / 2) / L * window_size + window_size / 2,
-            (ny[0] - sigma / 2) / L * window_size + window_size / 2,
-            (nx[0] + sigma / 2) / L * window_size + window_size / 2,
-            (ny[0] + sigma / 2) / L * window_size + window_size / 2,
-        )
-        for j, particle in enumerate(particles):
-            canvas.coords(
-                particle,
-                (nx[j + 1] - sigma / 2) / L * window_size + window_size / 2,
-                (ny[j + 1] - sigma / 2) / L * window_size + window_size / 2,
-                (nx[j + 1] + sigma / 2) / L * window_size + window_size / 2,
-                (ny[j + 1] + sigma / 2) / L * window_size + window_size / 2,
-            )
 
-        if step >= 10000:
-            running = False
-        tk.title(f'Time {step * dt:.1f} - Iteration {step}')
-        tk.update_idletasks()
-        tk.update()
-        time.sleep(.001)  # Increase to slow down the simulation.    
+    if step >= 10000:
+        running = False
 
     step += 1
-
-tk.update_idletasks()
-tk.update()
-tk.mainloop()  # Release animation handle (close window to finish).
 
 ####################
 
@@ -226,11 +172,12 @@ def CalcMSD(X, Y):
     return MSD
 
 ##################
-
-#print(len(x))
+print(x.shape)
 #print(y.shape)
-#print(CalcMSD(x,y))
+print(CalcMSD(x,y))
 
-plt.loglog(CalcMSD(x,y))
-plt.autoscale(enable=True, axis='x', tight=True) # optionally set a tight x-axis
+plt.loglog(CalcMSD(x, y))
+plt.xlim(1e0, 1e1)  # sets x-axis range from 10^0 to 10^1
+plt.autoscale(enable=True, axis='y', tight=True)  # still autoscale y-axis
 plt.show()
+
