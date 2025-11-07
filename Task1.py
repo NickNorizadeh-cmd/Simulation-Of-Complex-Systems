@@ -5,7 +5,7 @@ eps = 1  # Energy (unit of epsilon0).
 v0 = 1  # Initial speed (units of v0 = sqrt((2 * epsilon0) / m0)).
 
 # Parameters for the simulation.
-N_particles = 1  # Number of particles.
+N_particles = 100  # Number of particles.
 
 dt = 0.001   # Time step (units of t0 = sigma * sqrt(m0 /(2 * epsilon0))).
 
@@ -104,17 +104,16 @@ def stop_loop(event):
     running = False
 running = True  # Flag to control the loop.
 while running:
-    x_half = x + 0.5 * vx * dt # r_n_1/2      
-    y_half = y + 0.5 * vy * dt
-    #print("Running")      
+    x_half = x + 0.5 * vx * dt      
+    y_half = y + 0.5 * vy * dt      
 
     fx, fy = \
         total_force_cutoff(x_half, y_half, N_particles, sigma, eps, neighbours)
     
-    nvx = vx + fx / m * dt # v_n+1  
-    nvy = vy + fy / m * dt #
+    nvx = vx + fx / m * dt
+    nvy = vy + fy / m * dt
         
-    nx = x_half + 0.5 * nvx * dt # r_n_1
+    nx = x_half + 0.5 * nvx * dt
     ny = y_half + 0.5 * nvy * dt       
     
     # Reflecting boundary conditions.
@@ -146,21 +145,21 @@ while running:
 
     # Update variables for next iteration.
     x = nx
-    #print("Shape of x", x.shape)
     y = ny
     vx = nvx
     vy = nvy
     v = nv
     phi = nphi
-    
-    position_x.append(x) # Issue is with appending. We should figure out why this is not appending 100 points
-    position_y.append(y)
+
+    if step % 10 == 0:
+        print(step,end="\r")
+
+    position_x.append(x[44]) # Append a single particle value. The 44th is in the middle of the lattice. The array describes how the 44th particle changes over iterations.
+    position_y.append(y[44])
 
     if step >= 10000:
-        running = False
-
+            running = False
     step += 1
-
 ####################
 
 def CalcMSD(X, Y):
@@ -179,12 +178,24 @@ def CalcMSD(X, Y):
 
 ##################
 position_x = np.array(position_x)
-#print("Position_x", arr.shape)
+position_y = np.array(position_y)
 
-#print(CalcMSD(position_x,position_y))
-n_list = np.arange(1,10001)
-plt.loglog(n_list* dt, CalcMSD(position_x, position_y))
-#plt.xlim(1e0, 1e1)  # sets x-axis range from 10^0 to 10^1
-#plt.autoscale(enable=True, axis='y', tight=True)  # still autoscale y-axis
+# Trajectory + final scatter
+plt.figure()
+plt.scatter(x, y, label="Final positions")
+plt.plot(position_x, position_y, label="Trajectory (particle 44)")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.legend()
+plt.title("Particle Trajectory and Final Configuration")
+
+# MSD plot
+n_list = np.arange(1, 10001)
+plt.figure()
+plt.loglog(n_list * dt, CalcMSD(position_x, position_y))
+plt.xlabel("Time (t)")
+plt.ylabel("MSD")
+plt.title("Mean Squared Displacement")
+plt.grid(True, which="both", ls="--")
+
 plt.show()
-
