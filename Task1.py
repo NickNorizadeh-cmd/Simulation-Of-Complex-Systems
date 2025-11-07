@@ -180,10 +180,12 @@ def CalcMSD(X, Y):
 position_x = np.array(position_x)
 position_y = np.array(position_y)
 
-# Trajectory + final scatter
-plt.figure()
+# Scatter plot of final configuration
 plt.scatter(x, y, label="Final positions")
-plt.plot(position_x, position_y, label="Trajectory (particle 44)")
+
+# Trajectory of the 44th particle in orange
+plt.plot(position_x, position_y, color="orange", label="Trajectory (particle 44)")
+
 plt.xlabel("x")
 plt.ylabel("y")
 plt.legend()
