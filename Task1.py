@@ -9,7 +9,7 @@ N_particles = 100  # Number of particles.
 
 dt = 0.001   # Time step (units of t0 = sigma * sqrt(m0 /(2 * epsilon0))).
 
-L = 10 * sigma  # Box size (units of sigma0).
+L = 16 * sigma  # Box size (units of sigma0).
 x_min, x_max, y_min, y_max = -L/2, L/2, -L/2, L/2
 
 cutoff_radius = 5 * sigma  # Cutoff_radius for neighbours list.
@@ -161,43 +161,74 @@ while running:
             running = False
     step += 1
 ####################
-
-def CalcMSD(X, Y):
-    N = len(X)
-    MSD = []
-    for n in range(1, N):  # n is the lag
-        sum_sq_disp = 0
-        count = 0
-        for i in range(N - n):
-            dx = X[i + n] - X[i]
-            dy = Y[i + n] - Y[i]
-            sum_sq_disp += dx**2 + dy**2
-            count += 1
-        MSD.append(sum_sq_disp / count)
-    return MSD
+def calc_msd_vectorized(X, Y):
+    """MSD for a single 2D trajectory, lags 1..N-1."""
+    X = np.asarray(X, dtype=float)
+    Y = np.asarray(Y, dtype=float)
+    N = X.size
+    msd = np.empty(N-1, dtype=float)
+    for n in range(1, N):
+        dx = X[n:] - X[:-n]
+        dy = Y[n:] - Y[:-n]
+        msd[n-1] = np.mean(dx*dx + dy*dy)
+    return msd
 
 ##################
-position_x = np.array(position_x)
-position_y = np.array(position_y)
+#position_x = np.array(position_x)
+#position_y = np.array(position_y)
 
 # Scatter plot of final configuration
-plt.scatter(x, y, label="Final positions")
+#plt.scatter(x, y, label="Final positions")
 
 # Trajectory of the 44th particle in orange
-plt.plot(position_x, position_y, color="orange", label="Trajectory (particle 44)")
+#plt.plot(position_x, position_y, color="orange", label="Trajectory (particle 44)")
 
-plt.xlabel("x")
-plt.ylabel("y")
-plt.legend()
-plt.title("Particle Trajectory and Final Configuration")
+#plt.xlabel("x")
+#plt.ylabel("y")
+#plt.legend()
+#plt.title("Particle Trajectory and Final Configuration")
 
 # MSD plot
-n_list = np.arange(1, 10001)
-plt.figure()
-plt.loglog(n_list * dt, CalcMSD(position_x, position_y))
-plt.xlabel("Time (t)")
-plt.ylabel("MSD")
-plt.title("Mean Squared Displacement")
-plt.grid(True, which="both", ls="--")
+#n_list = np.arange(1, 10001)
+#plt.figure()
+#plt.loglog(n_list * dt, CalcMSD(position_x, position_y))
+#plt.xlabel("Time (t)")
+#plt.ylabel("MSD")
+#plt.title("Mean Squared Displacement")
+#plt.grid(True, which="both", ls="--")
+
+#plt.show()
+
+
+# -----------------------------
+# Files to load
+# -----------------------------
+files = ["trajectory_L10sigma.npz", "trajectory_L16sigma.npz"]
+dt = 0.001  # time step
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Trajectories
+for fname in files:
+    data = np.load(fname)
+    px = data["position_x"]
+    py = data["position_y"]
+    axes[0].plot(px, py, label=fname.replace(".npz",""))
+axes[0].set_title("Trajectories of particle 44")
+axes[0].set_aspect("equal", adjustable="box")
+axes[0].legend()
+
+# MSD
+downsample = 10
+for fname in files:
+    data = np.load(fname)
+    px = data["position_x"]
+    py = data["position_y"]
+    msd = calc_msd_vectorized(px, py)
+    time = np.arange(1, len(msd)+1) * dt
+    axes[1].loglog(time[::downsample], msd[::downsample],
+                   label=fname.replace(".npz",""))
+axes[1].set_title("Mean Squared Displacement")
+axes[1].legend()
+axes[1].grid(True, which="both", ls="--")
 
 plt.show()
